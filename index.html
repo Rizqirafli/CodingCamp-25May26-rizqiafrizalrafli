@@ -4,7 +4,373 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Expense &amp; Budget Visualizer</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* ========== RESET & GLOBAL ========== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      line-height: 1.5;
+      padding: 20px;
+    }
+
+    /* ========== HEADER & BALANCE ========== */
+    .app-header {
+      background: linear-gradient(135deg, #1e1b4b, #312e81);
+      border-radius: 1.5rem;
+      padding: 1.2rem 1.8rem;
+      margin-bottom: 1.8rem;
+      color: white;
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .app-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+    }
+
+    .balance-card {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(4px);
+      padding: 0.6rem 1.2rem;
+      border-radius: 2rem;
+      text-align: right;
+    }
+
+    .balance-label {
+      font-size: 0.85rem;
+      opacity: 0.85;
+      display: block;
+    }
+
+    .balance-amount {
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    /* ========== LAYOUT 2 KOLOM ========== */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 760px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ========== CARD ========== */
+    .card {
+      background: white;
+      border-radius: 1.2rem;
+      padding: 1.3rem 1.2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      transition: box-shadow 0.2s;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      border-left: 4px solid #4f46e5;
+      padding-left: 0.7rem;
+    }
+
+    /* ========== FORM ========== */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      font-weight: 500;
+      font-size: 0.85rem;
+      display: block;
+      margin-bottom: 0.3rem;
+      color: #374151;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.8rem;
+      font-size: 0.9rem;
+      background: white;
+      transition: 0.2s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.2);
+    }
+
+    .category-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-icon {
+      background: #e5e7eb;
+      border: none;
+      padding: 0 0.8rem;
+      border-radius: 0.8rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 0.65rem;
+      width: 100%;
+      border-radius: 2rem;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: #4338ca;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      cursor: pointer;
+    }
+
+    .field-error {
+      color: #dc2626;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      display: block;
+    }
+
+    .optional {
+      font-weight: normal;
+      font-size: 0.7rem;
+      color: #6b7280;
+    }
+
+    /* ========== TRANSACTION LIST ========== */
+    .transaction-list {
+      list-style: none;
+    }
+
+    .tx-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .tx-info {
+      flex: 1;
+    }
+
+    .tx-name {
+      font-weight: 500;
+    }
+
+    .tx-meta {
+      font-size: 0.7rem;
+      color: #6b7280;
+    }
+
+    .tx-amount {
+      font-weight: 600;
+      margin-right: 0.8rem;
+      color: #111827;
+    }
+
+    .tx-delete {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0.5;
+      transition: 0.2s;
+    }
+
+    .tx-delete:hover {
+      opacity: 1;
+      color: #dc2626;
+    }
+
+    .empty-state {
+      color: #9ca3af;
+      text-align: center;
+      padding: 1.5rem;
+      font-style: italic;
+    }
+
+    /* ========== SORT & CATEGORY MANAGER ========== */
+    .sort-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .sort-label {
+      margin: 0;
+    }
+
+    .cat-list {
+      list-style: none;
+      margin-top: 0.8rem;
+    }
+
+    .cat-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .cat-badge {
+      background: #e5e7eb;
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 1rem;
+      margin-left: 0.5rem;
+    }
+
+    .cat-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #ef4444;
+    }
+
+    .cat-delete:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ========== CHART & MONTHLY ========== */
+    .chart-wrapper {
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .chart-empty {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #9ca3af;
+      pointer-events: none;
+    }
+
+    .chart-legend {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .monthly-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .monthly-table th, .monthly-table td {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f3f4f6;
+      text-align: left;
+    }
+
+    .monthly-table td.month-total {
+      text-align: right;
+      font-weight: 500;
+    }
+
+    /* ========== BANNER / TOAST ========== */
+    .banner, .limit-banner {
+      background: #fef9c3;
+      border-left: 6px solid #eab308;
+      padding: 0.7rem 1rem;
+      border-radius: 0.8rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f2937;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    .banner-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
 
@@ -20,15 +386,12 @@
   </header>
 
   <!-- ===== NOTIFICATION BANNER ===== -->
-  <div class="banner" id="storageBanner" role="alert" aria-live="polite" hidden>
+  <div class="banner" id="storageBanner" role="alert" hidden>
     <span id="bannerMessage"></span>
-    <button class="banner-close" id="bannerClose" aria-label="Tutup notifikasi">✕</button>
+    <button class="banner-close" id="bannerClose" aria-label="Tutup">✕</button>
   </div>
 
-  <!-- ===== TOAST ===== -->
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <!-- ===== SPENDING LIMIT BANNER ===== -->
+  <div class="toast" id="toast" role="status"></div>
   <div class="limit-banner" id="limitBanner" hidden>
     <span id="limitBannerMsg"></span>
   </div>
@@ -36,65 +399,59 @@
   <main class="app-main">
     <div class="layout">
 
-      <!-- ===== LEFT COLUMN ===== -->
+      <!-- KOLOM KIRI -->
       <section class="left-col">
-
-        <!-- Add Transaction Form -->
+        <!-- Form Tambah Transaksi -->
         <div class="card">
           <h2 class="card-title">Tambah Transaksi</h2>
           <form id="transactionForm" novalidate>
             <div class="form-group">
               <label for="itemName">Nama Item</label>
-              <input type="text" id="itemName" name="itemName" maxlength="100"
-                     placeholder="Contoh: Makan siang" autocomplete="off" />
-              <span class="field-error" id="itemNameError" role="alert"></span>
+              <input type="text" id="itemName" maxlength="100" placeholder="Contoh: Makan siang" />
+              <span class="field-error" id="itemNameError"></span>
             </div>
             <div class="form-group">
               <label for="amount">Jumlah (Rp)</label>
-              <input type="number" id="amount" name="amount" min="0.01" max="999999999.99"
-                     step="0.01" placeholder="Contoh: 25000" />
-              <span class="field-error" id="amountError" role="alert"></span>
+              <input type="number" id="amount" min="0.01" max="999999999.99" step="0.01" placeholder="Contoh: 25000" />
+              <span class="field-error" id="amountError"></span>
             </div>
             <div class="form-group">
               <label for="category">Kategori</label>
               <div class="category-row">
-                <select id="category" name="category">
+                <select id="category">
                   <option value="">-- Pilih Kategori --</option>
                 </select>
-                <button type="button" class="btn-icon" id="manageCatBtn"
-                        aria-label="Kelola kategori" title="Kelola kategori">⚙️</button>
+                <button type="button" class="btn-icon" id="manageCatBtn" title="Kelola kategori">⚙️</button>
               </div>
-              <span class="field-error" id="categoryError" role="alert"></span>
+              <span class="field-error" id="categoryError"></span>
             </div>
             <div class="form-group">
               <label for="spendingLimit">Batas Pengeluaran (Rp) <span class="optional">(opsional)</span></label>
-              <input type="number" id="spendingLimit" name="spendingLimit" min="0"
-                     placeholder="Contoh: 500000" />
+              <input type="number" id="spendingLimit" min="0" placeholder="Contoh: 500000" />
             </div>
-            <button type="submit" class="btn-primary" id="submitBtn">+ Tambah</button>
+            <button type="submit" class="btn-primary">+ Tambah</button>
           </form>
         </div>
 
-        <!-- Custom Category Manager (hidden panel) -->
+        <!-- Panel Kelola Kategori (hidden awal) -->
         <div class="card" id="categoryPanel" hidden>
           <h2 class="card-title">Kelola Kategori</h2>
           <div class="form-group">
             <label for="newCatInput">Nama Kategori Baru</label>
-            <div class="cat-add-row">
-              <input type="text" id="newCatInput" maxlength="30"
-                     placeholder="Maks. 30 karakter" autocomplete="off" />
+            <div class="category-row">
+              <input type="text" id="newCatInput" maxlength="30" placeholder="Maks. 30 karakter" />
               <button type="button" class="btn-secondary" id="addCatBtn">Tambah</button>
             </div>
-            <span class="field-error" id="catError" role="alert"></span>
+            <span class="field-error" id="catError"></span>
           </div>
-          <ul class="cat-list" id="catList" aria-label="Daftar kategori"></ul>
+          <ul class="cat-list" id="catList"></ul>
         </div>
 
-        <!-- Sort Controls -->
-        <div class="card sort-card">
+        <!-- Sort -->
+        <div class="card">
           <h2 class="card-title">Urutkan Transaksi</h2>
           <div class="sort-row">
-            <label for="sortSelect" class="sort-label">Urut berdasarkan:</label>
+            <label class="sort-label">Urut berdasarkan:</label>
             <select id="sortSelect">
               <option value="date_desc">Terbaru</option>
               <option value="amount_desc">Jumlah ↓</option>
@@ -104,44 +461,526 @@
           </div>
         </div>
 
-        <!-- Transaction List -->
+        <!-- Daftar Transaksi -->
         <div class="card">
           <h2 class="card-title">Daftar Transaksi</h2>
-          <ul class="transaction-list" id="transactionList" aria-label="Daftar transaksi">
-            <li class="empty-state" id="emptyState">
-              Belum ada transaksi. Tambahkan pengeluaran pertama Anda.
-            </li>
+          <ul class="transaction-list" id="transactionList">
+            <li class="empty-state" id="emptyState">Belum ada transaksi. Tambahkan pengeluaran pertama Anda.</li>
           </ul>
         </div>
-
       </section>
 
-      <!-- ===== RIGHT COLUMN ===== -->
+      <!-- KOLOM KANAN -->
       <section class="right-col">
-
         <!-- Pie Chart -->
-        <div class="card chart-card">
+        <div class="card">
           <h2 class="card-title">Distribusi Pengeluaran</h2>
           <div class="chart-wrapper">
-            <canvas id="pieChart" width="280" height="280"
-                    aria-label="Pie chart distribusi pengeluaran" role="img"></canvas>
-            <p class="chart-empty" id="chartEmpty">Belum ada data pengeluaran</p>
+            <canvas id="pieChart" width="280" height="280"></canvas>
+            <p class="chart-empty" id="chartEmpty">Belum ada data</p>
           </div>
-          <ul class="chart-legend" id="chartLegend" aria-label="Legenda chart"></ul>
+          <ul class="chart-legend" id="chartLegend"></ul>
         </div>
 
-        <!-- Monthly Summary -->
+        <!-- Ringkasan Bulanan -->
         <div class="card">
           <h2 class="card-title">Ringkasan Bulanan</h2>
           <div id="monthlySummary">
-            <p class="empty-state">Belum ada data pengeluaran</p>
+            <p class="empty-state">Belum ada data</p>
           </div>
         </div>
-
       </section>
     </div>
   </main>
 
-  <script src="js/app.js"></script>
+  <script>
+    // ============================================================
+    // STORAGE SERVICE (sama seperti kode Anda)
+    // ============================================================
+    const StorageService = (() => {
+      const KEYS = {
+        TRANSACTIONS: 'ebv_transactions',
+        CATEGORIES:   'ebv_categories',
+        SORT:         'ebv_sort',
+        LIMIT:        'ebv_limit',
+      };
+      function load(key) {
+        try {
+          const raw = localStorage.getItem(key);
+          return raw === null ? null : JSON.parse(raw);
+        } catch { return null; }
+      }
+      function save(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch { return false; }
+      }
+      return { load, save, KEYS };
+    })();
+
+    const BalanceFormatter = (() => {
+      function format(amount) {
+        if (amount === 0) return 'Rp 0';
+        const rounded = Math.round(amount);
+        const parts = rounded.toString().split('');
+        let result = '';
+        parts.reverse().forEach((d, i) => {
+          if (i > 0 && i % 3 === 0) result = '.' + result;
+          result = d + result;
+        });
+        return 'Rp ' + result;
+      }
+      return { format };
+    })();
+
+    // State global
+    const State = {
+      transactions: [],
+      customCategories: [],
+      activeSort: 'date_desc',
+      spendingLimit: 0,
+    };
+    const DEFAULT_CATEGORIES = ['Food', 'Transport', 'Fun'];
+    function getAllCategories() {
+      return [...DEFAULT_CATEGORIES, ...State.customCategories];
+    }
+    function generateId() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+      return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+    }
+
+    // Controller transaksi
+    const TransactionController = (() => {
+      function validateForm(data) {
+        const errors = {};
+        const name = (data.name || '').trim();
+        const amount = data.amount;
+        const category = (data.category || '').trim();
+        if (!name) errors.itemName = 'Nama item tidak boleh kosong.';
+        else if (name.length > 100) errors.itemName = 'Maksimal 100 karakter.';
+        const num = parseFloat(amount);
+        if (amount === '' || amount === null || isNaN(num)) errors.amount = 'Harus angka.';
+        else if (num < 0.01 || num > 999999999.99) errors.amount = 'Jumlah tidak valid.';
+        if (!category) errors.category = 'Pilih kategori.';
+        else if (!getAllCategories().includes(category)) errors.category = 'Kategori tidak valid.';
+        return errors;
+      }
+      function add(data) {
+        const errors = validateForm(data);
+        if (Object.keys(errors).length > 0) return { ok: false, errors };
+        const tx = {
+          id: generateId(),
+          name: data.name.trim(),
+          amount: parseFloat(parseFloat(data.amount).toFixed(2)),
+          category: data.category.trim(),
+          createdAt: new Date().toISOString(),
+        };
+        State.transactions.push(tx);
+        const saved = StorageService.save(StorageService.KEYS.TRANSACTIONS, State.transactions);
+        return { ok: true, saved, tx };
+      }
+      function remove(id) {
+        const idx = State.transactions.findIndex(t => t.id === id);
+        if (idx === -1) return { ok: false, error: 'Transaksi tidak ditemukan.' };
+        const removed = State.transactions.splice(idx, 1)[0];
+        const saved = StorageService.save(StorageService.KEYS.TRANSACTIONS, State.transactions);
+        if (!saved) {
+          State.transactions.splice(idx, 0, removed);
+          return { ok: false, error: 'Gagal menyimpan.' };
+        }
+        return { ok: true };
+      }
+      return { validateForm, add, remove };
+    })();
+
+    // Category controller
+    const CategoryController = (() => {
+      function validate(name) {
+        const trimmed = (name || '').trim();
+        if (!trimmed) return 'Nama kategori tidak boleh kosong.';
+        if (trimmed.length > 30) return 'Maksimal 30 karakter.';
+        if (!/^[A-Za-z0-9 \-]+$/.test(trimmed)) return 'Hanya huruf, angka, spasi, dan strip.';
+        if (DEFAULT_CATEGORIES.map(c => c.toLowerCase()).includes(trimmed.toLowerCase())) return 'Sudah menjadi kategori default.';
+        if (State.customCategories.map(c => c.toLowerCase()).includes(trimmed.toLowerCase())) return 'Kategori sudah ada.';
+        if (State.customCategories.length >= 20) return 'Maksimal 20 kategori kustom.';
+        return null;
+      }
+      function add(name) {
+        const err = validate(name);
+        if (err) return { ok: false, error: err };
+        const trimmed = name.trim();
+        State.customCategories.push(trimmed);
+        StorageService.save(StorageService.KEYS.CATEGORIES, State.customCategories);
+        return { ok: true };
+      }
+      function remove(name) {
+        if (DEFAULT_CATEGORIES.includes(name)) return { ok: false, error: 'Kategori default tidak bisa dihapus.' };
+        const idx = State.customCategories.indexOf(name);
+        if (idx === -1) return { ok: false, error: 'Tidak ditemukan.' };
+        State.customCategories.splice(idx, 1);
+        StorageService.save(StorageService.KEYS.CATEGORIES, State.customCategories);
+        return { ok: true };
+      }
+      return { validate, add, remove };
+    })();
+
+    // Sort
+    const SortController = (() => {
+      const OPTIONS = { DATE_DESC: 'date_desc', AMOUNT_ASC: 'amount_asc', AMOUNT_DESC: 'amount_desc', CATEGORY_AZ: 'category_az' };
+      function getSorted(transactions, option) {
+        const arr = [...transactions];
+        switch (option) {
+          case OPTIONS.AMOUNT_ASC: return arr.sort((a,b) => a.amount - b.amount || new Date(b.createdAt) - new Date(a.createdAt));
+          case OPTIONS.AMOUNT_DESC: return arr.sort((a,b) => b.amount - a.amount || new Date(b.createdAt) - new Date(a.createdAt));
+          case OPTIONS.CATEGORY_AZ: return arr.sort((a,b) => a.category.localeCompare(b.category, 'id') || new Date(b.createdAt) - new Date(a.createdAt));
+          default: return arr.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+      }
+      function setSort(option) { State.activeSort = option; StorageService.save(StorageService.KEYS.SORT, option); }
+      return { getSorted, setSort, OPTIONS };
+    })();
+
+    // Chart (pie)
+    const ChartRenderer = (() => {
+      const PALETTE = ['#4f46e5','#f59e0b','#22c55e','#ef4444','#06b6d4','#a855f7','#f97316','#14b8a6','#ec4899','#84cc16','#6366f1','#eab308','#10b981','#f43f5e','#0ea5e9','#8b5cf6','#fb923c','#2dd4bf'];
+      const colorMap = new Map();
+      let colorIdx = 0;
+      function getColor(cat) {
+        if (!colorMap.has(cat)) colorMap.set(cat, PALETTE[colorIdx++ % PALETTE.length]);
+        return colorMap.get(cat);
+      }
+      function computeTotals(transactions) {
+        const map = new Map();
+        for (const tx of transactions) map.set(tx.category, (map.get(tx.category) || 0) + tx.amount);
+        return map;
+      }
+      function draw(transactions) {
+        const canvas = document.getElementById('pieChart');
+        const emptyMsg = document.getElementById('chartEmpty');
+        const legend = document.getElementById('chartLegend');
+        if (!canvas) return;
+        const totals = computeTotals(transactions);
+        const entries = [...totals.entries()].filter(([,v]) => v > 0);
+        if (entries.length === 0) {
+          canvas.style.opacity = '0';
+          if (emptyMsg) emptyMsg.style.display = 'flex';
+          if (legend) legend.innerHTML = '';
+          return;
+        }
+        canvas.style.opacity = '1';
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        const cx = W/2, cy = H/2;
+        const radius = Math.min(cx, cy) - 10;
+        ctx.clearRect(0,0,W,H);
+        const total = entries.reduce((s,[,v]) => s+v,0);
+        let startAngle = -Math.PI/2;
+        entries.forEach(([cat,val]) => {
+          const slice = (val/total)*2*Math.PI;
+          ctx.beginPath();
+          ctx.moveTo(cx,cy);
+          ctx.arc(cx,cy,radius,startAngle,startAngle+slice);
+          ctx.closePath();
+          ctx.fillStyle = getColor(cat);
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          startAngle += slice;
+        });
+        legend.innerHTML = '';
+        entries.forEach(([cat,val]) => {
+          const pct = ((val/total)*100).toFixed(1);
+          const li = document.createElement('li');
+          li.className = 'legend-item';
+          li.innerHTML = `<span class="legend-dot" style="background:${getColor(cat)}"></span><span>${cat} (${pct}%)</span>`;
+          legend.appendChild(li);
+        });
+      }
+      function drawEmpty() {
+        const canvas = document.getElementById('pieChart');
+        const emptyMsg = document.getElementById('chartEmpty');
+        if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); canvas.style.opacity = '0'; }
+        if (emptyMsg) emptyMsg.style.display = 'flex';
+        const legend = document.getElementById('chartLegend');
+        if (legend) legend.innerHTML = '';
+      }
+      return { draw, drawEmpty };
+    })();
+
+    // View (render semua UI)
+    const View = (() => {
+      function renderBalance(transactions) {
+        const el = document.getElementById('balanceDisplay');
+        if (el) el.textContent = BalanceFormatter.format(transactions.reduce((s,t)=>s+t.amount,0));
+      }
+      function renderLimitBanner(transactions) {
+        const banner = document.getElementById('limitBanner');
+        const msg = document.getElementById('limitBannerMsg');
+        if (!banner || !msg) return;
+        const limit = State.spendingLimit;
+        if (limit <= 0) { banner.hidden = true; return; }
+        const total = transactions.reduce((s,t)=>s+t.amount,0);
+        if (total > limit) {
+          msg.textContent = `⚠️ Total pengeluaran (${BalanceFormatter.format(total)}) melebihi batas (${BalanceFormatter.format(limit)})!`;
+          banner.hidden = false;
+        } else banner.hidden = true;
+      }
+      function renderTransactionList(transactions) {
+        const list = document.getElementById('transactionList');
+        const empty = document.getElementById('emptyState');
+        if (!list) return;
+        [...list.querySelectorAll('.tx-item')].forEach(el => el.remove());
+        const sorted = SortController.getSorted(transactions, State.activeSort);
+        if (sorted.length === 0) { if (empty) empty.style.display = ''; return; }
+        if (empty) empty.style.display = 'none';
+        sorted.forEach(tx => {
+          const li = document.createElement('li');
+          li.className = 'tx-item';
+          li.dataset.id = tx.id;
+          const date = new Date(tx.createdAt);
+          const dateStr = date.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+          li.innerHTML = `
+            <div class="tx-info">
+              <div class="tx-name">${escapeHtml(tx.name)}</div>
+              <div class="tx-meta">${escapeHtml(tx.category)} · ${dateStr}</div>
+            </div>
+            <span class="tx-amount">${BalanceFormatter.format(tx.amount)}</span>
+            <button class="tx-delete" data-id="${tx.id}" aria-label="Hapus">🗑</button>
+          `;
+          list.appendChild(li);
+        });
+      }
+      function renderChart(transactions) { transactions.length ? ChartRenderer.draw(transactions) : ChartRenderer.drawEmpty(); }
+      function renderMonthlySummary(transactions) {
+        const container = document.getElementById('monthlySummary');
+        if (!container) return;
+        if (transactions.length === 0) { container.innerHTML = '<p class="empty-state">Belum ada data pengeluaran</p>'; return; }
+        const map = new Map();
+        transactions.forEach(tx => {
+          const d = new Date(tx.createdAt);
+          const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+          map.set(key, (map.get(key)||0) + tx.amount);
+        });
+        const entries = [...map.entries()].sort((a,b)=>b[0].localeCompare(a[0]));
+        const table = document.createElement('table');
+        table.className = 'monthly-table';
+        table.innerHTML = `<thead><tr><th>Bulan</th><th style="text-align:right">Total</th></tr></thead>`;
+        const tbody = document.createElement('tbody');
+        entries.forEach(([key,total]) => {
+          const [year,month] = key.split('-');
+          const label = new Date(parseInt(year), parseInt(month)-1, 1).toLocaleDateString('id-ID', { month:'long', year:'numeric' });
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${label}</td><td style="text-align:right">${BalanceFormatter.format(total)}</td>`;
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.innerHTML = '';
+        container.appendChild(table);
+      }
+      function renderCategorySelector() {
+        const sel = document.getElementById('category');
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">-- Pilih Kategori --</option>';
+        getAllCategories().forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat;
+          opt.textContent = cat;
+          if (cat === current) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      }
+      function renderCategoryList() {
+        const ul = document.getElementById('catList');
+        if (!ul) return;
+        ul.innerHTML = '';
+        getAllCategories().forEach(cat => {
+          const isDefault = DEFAULT_CATEGORIES.includes(cat);
+          const li = document.createElement('li');
+          li.className = 'cat-item';
+          li.innerHTML = `
+            <span>${escapeHtml(cat)}${isDefault ? '<span class="cat-badge">default</span>' : ''}</span>
+            <button class="cat-delete" data-cat="${escapeHtml(cat)}" ${isDefault ? 'disabled' : ''}>✕</button>
+          `;
+          ul.appendChild(li);
+        });
+      }
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3500);
+      }
+      function showFieldErrors(errors) {
+        ['itemName','amount','category'].forEach(f => {
+          const errEl = document.getElementById(f+'Error');
+          const inp = document.getElementById(f);
+          if (errEl) errEl.textContent = errors[f] || '';
+          if (inp) inp.classList.toggle('error', !!errors[f]);
+        });
+      }
+      function clearFieldErrors() {
+        ['itemName','amount','category'].forEach(f => {
+          const errEl = document.getElementById(f+'Error');
+          const inp = document.getElementById(f);
+          if (errEl) errEl.textContent = '';
+          if (inp) inp.classList.remove('error');
+        });
+      }
+      function resetForm() { document.getElementById('transactionForm')?.reset(); clearFieldErrors(); }
+      function showBanner(msg) {
+        const banner = document.getElementById('storageBanner');
+        const span = document.getElementById('bannerMessage');
+        if (banner && span) { span.textContent = msg; banner.hidden = false; }
+      }
+      function renderAll(transactions) {
+        renderBalance(transactions);
+        renderLimitBanner(transactions);
+        renderTransactionList(transactions);
+        renderChart(transactions);
+        renderMonthlySummary(transactions);
+      }
+      return { renderAll, renderCategorySelector, renderCategoryList, showToast, showFieldErrors, clearFieldErrors, resetForm, showBanner };
+    })();
+
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+    // ========== APP dengan INISIALISASI DATA CONTOH ==========
+    const App = (() => {
+      function loadState() {
+        // 🔥 INISIALISASI DATA CONTOH jika storage kosong atau tidak ada transaksi
+        const rawTx = StorageService.load(StorageService.KEYS.TRANSACTIONS);
+        if (!rawTx || (Array.isArray(rawTx) && rawTx.length === 0)) {
+          // Data contoh persis seperti foto Kiri
+          State.transactions = [
+            { id: generateId(), name: "Shopping", amount: 500000, category: "Fun", createdAt: new Date(2026, 4, 29).toISOString() },
+            { id: generateId(), name: "Ojek Online", amount: 14000, category: "Transport", createdAt: new Date(2026, 4, 29).toISOString() },
+            { id: generateId(), name: "Sarapan Pagi", amount: 15000, category: "Food", createdAt: new Date(2026, 4, 29).toISOString() }
+          ];
+          StorageService.save(StorageService.KEYS.TRANSACTIONS, State.transactions);
+        } else if (Array.isArray(rawTx)) {
+          State.transactions = rawTx;
+        } else {
+          View.showBanner('Data transaksi tidak valid. Memulai kosong.');
+        }
+
+        const rawCats = StorageService.load(StorageService.KEYS.CATEGORIES);
+        if (Array.isArray(rawCats)) State.customCategories = rawCats;
+        const rawSort = StorageService.load(StorageService.KEYS.SORT);
+        if (rawSort && Object.values(SortController.OPTIONS).includes(rawSort)) State.activeSort = rawSort;
+        const rawLimit = StorageService.load(StorageService.KEYS.LIMIT);
+        if (typeof rawLimit === 'number' && rawLimit >= 0) State.spendingLimit = rawLimit;
+      }
+
+      function wireEvents() {
+        const form = document.getElementById('transactionForm');
+        if (form) {
+          form.addEventListener('submit', e => {
+            e.preventDefault();
+            View.clearFieldErrors();
+            const data = {
+              name: document.getElementById('itemName').value,
+              amount: document.getElementById('amount').value,
+              category: document.getElementById('category').value,
+            };
+            const limitVal = parseFloat(document.getElementById('spendingLimit').value);
+            if (!isNaN(limitVal) && limitVal >= 0) {
+              State.spendingLimit = limitVal;
+              StorageService.save(StorageService.KEYS.LIMIT, limitVal);
+            }
+            const result = TransactionController.add(data);
+            if (!result.ok) { View.showFieldErrors(result.errors); return; }
+            if (result.saved === false) View.showToast('⚠️ Data mungkin tidak tersimpan.');
+            View.resetForm();
+            View.renderCategorySelector();
+            View.renderAll(State.transactions);
+          });
+        }
+
+        const txList = document.getElementById('transactionList');
+        if (txList) {
+          txList.addEventListener('click', e => {
+            const btn = e.target.closest('.tx-delete');
+            if (!btn) return;
+            const id = btn.dataset.id;
+            const tx = State.transactions.find(t => t.id === id);
+            if (!confirm(`Hapus "${tx?.name}"?`)) return;
+            const result = TransactionController.remove(id);
+            if (!result.ok) View.showToast('❌ ' + result.error);
+            View.renderAll(State.transactions);
+          });
+        }
+
+        const sortSel = document.getElementById('sortSelect');
+        if (sortSel) {
+          sortSel.addEventListener('change', () => {
+            SortController.setSort(sortSel.value);
+            View.renderTransactionList(State.transactions);
+          });
+        }
+
+        const manageBtn = document.getElementById('manageCatBtn');
+        const panel = document.getElementById('categoryPanel');
+        if (manageBtn && panel) {
+          manageBtn.addEventListener('click', () => { panel.hidden = !panel.hidden; });
+        }
+
+        const addCatBtn = document.getElementById('addCatBtn');
+        if (addCatBtn) {
+          addCatBtn.addEventListener('click', () => {
+            const input = document.getElementById('newCatInput');
+            const errEl = document.getElementById('catError');
+            const result = CategoryController.add(input?.value || '');
+            if (!result.ok) { if (errEl) errEl.textContent = result.error; return; }
+            if (errEl) errEl.textContent = '';
+            if (input) input.value = '';
+            View.renderCategorySelector();
+            View.renderCategoryList();
+          });
+        }
+
+        const catList = document.getElementById('catList');
+        if (catList) {
+          catList.addEventListener('click', e => {
+            const btn = e.target.closest('.cat-delete');
+            if (!btn || btn.disabled) return;
+            const cat = btn.dataset.cat;
+            const result = CategoryController.remove(cat);
+            if (!result.ok) View.showToast('❌ ' + result.error);
+            View.renderCategorySelector();
+            View.renderCategoryList();
+            View.renderAll(State.transactions);
+          });
+        }
+
+        const bannerClose = document.getElementById('bannerClose');
+        if (bannerClose) {
+          bannerClose.addEventListener('click', () => {
+            const banner = document.getElementById('storageBanner');
+            if (banner) banner.hidden = true;
+          });
+        }
+      }
+
+      function init() {
+        loadState();
+        wireEvents();
+        View.renderCategorySelector();
+        View.renderCategoryList();
+        View.renderAll(State.transactions);
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) sortSelect.value = State.activeSort;
+        const limitInput = document.getElementById('spendingLimit');
+        if (limitInput && State.spendingLimit > 0) limitInput.value = State.spendingLimit;
+      }
+      return { init };
+    })();
+
+    document.addEventListener('DOMContentLoaded', App.init);
+  </script>
 </body>
 </html>
