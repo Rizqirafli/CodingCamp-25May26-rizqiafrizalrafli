@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense &amp; Budget Visualizer</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ===== HEADER / BALANCE ===== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <h1 class="app-title">💰 Expense &amp; Budget Visualizer</h1>
+      <div class="balance-card">
+        <span class="balance-label">Total Pengeluaran</span>
+        <span class="balance-amount" id="balanceDisplay">Rp 0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== NOTIFICATION BANNER ===== -->
+  <div class="banner" id="storageBanner" role="alert" aria-live="polite" hidden>
+    <span id="bannerMessage"></span>
+    <button class="banner-close" id="bannerClose" aria-label="Tutup notifikasi">✕</button>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- ===== SPENDING LIMIT BANNER ===== -->
+  <div class="limit-banner" id="limitBanner" hidden>
+    <span id="limitBannerMsg"></span>
+  </div>
+
+  <main class="app-main">
+    <div class="layout">
+
+      <!-- ===== LEFT COLUMN ===== -->
+      <section class="left-col">
+
+        <!-- Add Transaction Form -->
+        <div class="card">
+          <h2 class="card-title">Tambah Transaksi</h2>
+          <form id="transactionForm" novalidate>
+            <div class="form-group">
+              <label for="itemName">Nama Item</label>
+              <input type="text" id="itemName" name="itemName" maxlength="100"
+                     placeholder="Contoh: Makan siang" autocomplete="off" />
+              <span class="field-error" id="itemNameError" role="alert"></span>
+            </div>
+            <div class="form-group">
+              <label for="amount">Jumlah (Rp)</label>
+              <input type="number" id="amount" name="amount" min="0.01" max="999999999.99"
+                     step="0.01" placeholder="Contoh: 25000" />
+              <span class="field-error" id="amountError" role="alert"></span>
+            </div>
+            <div class="form-group">
+              <label for="category">Kategori</label>
+              <div class="category-row">
+                <select id="category" name="category">
+                  <option value="">-- Pilih Kategori --</option>
+                </select>
+                <button type="button" class="btn-icon" id="manageCatBtn"
+                        aria-label="Kelola kategori" title="Kelola kategori">⚙️</button>
+              </div>
+              <span class="field-error" id="categoryError" role="alert"></span>
+            </div>
+            <div class="form-group">
+              <label for="spendingLimit">Batas Pengeluaran (Rp) <span class="optional">(opsional)</span></label>
+              <input type="number" id="spendingLimit" name="spendingLimit" min="0"
+                     placeholder="Contoh: 500000" />
+            </div>
+            <button type="submit" class="btn-primary" id="submitBtn">+ Tambah</button>
+          </form>
+        </div>
+
+        <!-- Custom Category Manager (hidden panel) -->
+        <div class="card" id="categoryPanel" hidden>
+          <h2 class="card-title">Kelola Kategori</h2>
+          <div class="form-group">
+            <label for="newCatInput">Nama Kategori Baru</label>
+            <div class="cat-add-row">
+              <input type="text" id="newCatInput" maxlength="30"
+                     placeholder="Maks. 30 karakter" autocomplete="off" />
+              <button type="button" class="btn-secondary" id="addCatBtn">Tambah</button>
+            </div>
+            <span class="field-error" id="catError" role="alert"></span>
+          </div>
+          <ul class="cat-list" id="catList" aria-label="Daftar kategori"></ul>
+        </div>
+
+        <!-- Sort Controls -->
+        <div class="card sort-card">
+          <h2 class="card-title">Urutkan Transaksi</h2>
+          <div class="sort-row">
+            <label for="sortSelect" class="sort-label">Urut berdasarkan:</label>
+            <select id="sortSelect">
+              <option value="date_desc">Terbaru</option>
+              <option value="amount_desc">Jumlah ↓</option>
+              <option value="amount_asc">Jumlah ↑</option>
+              <option value="category_az">Kategori A–Z</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Transaction List -->
+        <div class="card">
+          <h2 class="card-title">Daftar Transaksi</h2>
+          <ul class="transaction-list" id="transactionList" aria-label="Daftar transaksi">
+            <li class="empty-state" id="emptyState">
+              Belum ada transaksi. Tambahkan pengeluaran pertama Anda.
+            </li>
+          </ul>
+        </div>
+
+      </section>
+
+      <!-- ===== RIGHT COLUMN ===== -->
+      <section class="right-col">
+
+        <!-- Pie Chart -->
+        <div class="card chart-card">
+          <h2 class="card-title">Distribusi Pengeluaran</h2>
+          <div class="chart-wrapper">
+            <canvas id="pieChart" width="280" height="280"
+                    aria-label="Pie chart distribusi pengeluaran" role="img"></canvas>
+            <p class="chart-empty" id="chartEmpty">Belum ada data pengeluaran</p>
+          </div>
+          <ul class="chart-legend" id="chartLegend" aria-label="Legenda chart"></ul>
+        </div>
+
+        <!-- Monthly Summary -->
+        <div class="card">
+          <h2 class="card-title">Ringkasan Bulanan</h2>
+          <div id="monthlySummary">
+            <p class="empty-state">Belum ada data pengeluaran</p>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
